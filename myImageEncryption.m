@@ -10,13 +10,13 @@ encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3,m
 %encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3);
 %encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3);
 %imshow(encrypted_img);
-imwrite(encrypted_img, 'encrypted_image_2.png');
+imwrite(encrypted_img, 'encrypted_image_2.jpg');
 decrypted_img = imdecrypt(encrypted_img,moves1,moves2,moves3,moves4);
 decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3,moves4);
 %decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3);
 %decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3);
-
-imwrite(decrypted_img,'decrypted_image_1.png')
+% 
+imwrite(decrypted_img,'decrypted_image_1.jpg')
 subplot(1, 3, 1); 
 imshow(a);
 title('Original Image');
@@ -26,6 +26,35 @@ title('encrypted Image');
 subplot(1, 3, 3); 
 imshow(decrypted_img);
 title('decrypted Image');
+% figure 
+% subplot(1, 3, 1); 
+% imhist(a);
+% title('Original Image');
+% subplot(1, 3, 2); 
+% imhist(encrypted_img);
+% title('encrypted Image');
+% subplot(1, 3, 3); 
+% imhist(decrypted_img);
+% title('decrypted Image');
+% histogram(encrypted_img)
+% entropy_encrypted = cal_entropy(encrypted_img);
+% disp(entropy_encrypted)
+% s = size(encrypted_img);
+% random_img = zeros(s);
+% for i = 1:s(1)
+%     for j = 1:s(2)
+%         for k = 1:s(3)
+%             random_img(i,j,k) = rand();
+%         end
+%     end
+% end
+% figure
+% imshow(random_img)
+% entropy_random = cal_entropy(random_img);
+% disp(entropy_random)
+% 
+% entropy_decrypted = cal_entropy(decrypted_img);
+% disp(entropy_decrypted)
 %b = 1:54;
 %T = generateT();
 %move1 = make_shuffle_mat(T, moves1);
@@ -34,6 +63,7 @@ title('decrypted Image');
 % move1 = inv(move1);
 % b =  move1 \ shuffle';
 % disp(b)
+
 function out_img = imencrypt(a, moves1, moves2, moves3, moves4)
     T = generateT();
 
@@ -45,79 +75,65 @@ function out_img = imencrypt(a, moves1, moves2, moves3, moves4)
     R = a(:,:,1);
     G = a(:,:,2);
     B = a(:,:,3);
-
+    shuffledR = shuffle_channel(R,move1,move4);
+    shuffledG = shuffle_channel(G,move2,move4);
+    shuffledB = shuffle_channel(B,move3,move4);
+    out_img = cat(3, shuffledR, shuffledG, shuffledB);
+end
+function shuffledR = shuffle_channel(R,move1,move4)
     [rows, cols] = size(R);
-    I = shuffleI(rows,move4);
-    J = shuffleI(cols,move4);
+    I = shuffleI(rows,move4*move1);
+    J = shuffleI(cols,move4*move1);
     p = 1:54:rows;
     q = 1:54:cols;
 
     shuffledR = zeros(rows, cols);
-    shuffledG = zeros(rows, cols);
-    shuffledB = zeros(rows, cols);
     
     for i = 1:length(I)
         for j = 1:length(J)
-            blockR = R(I(i):I(i)+53, J(j):J(j)+53);
-            blockG = G(I(i):I(i)+53, J(j):J(j)+53);
-            blockB = B(I(i):I(i)+53, J(j):J(j)+53);
-            
+            blockR = R(I(i):I(i)+53, J(j):J(j)+53);            
             shuffledR(p(i):p(i)+53, q(j):q(j)+53) = blockR * move1;
-            shuffledG(p(i):p(i)+53, q(j):q(j)+53) = blockG * move2;
-            shuffledB(p(i):p(i)+53, q(j):q(j)+53) = blockB * move3;
-            
             progress = ((i-1)*length(J) + j )*100/(length(I)*length(J)) ;
             disp(progress);
         end
     end
-    
-    out_img = cat(3, shuffledR, shuffledG, shuffledB);
 end
-
 function out_img = imdecrypt(a, moves1, moves2, moves3, moves4)
     T = generateT();
     
-    move1 = inv(make_shuffle_mat(T, moves1));
-    move2 = inv(make_shuffle_mat(T, moves2));
-    move3 = inv(make_shuffle_mat(T, moves3));
+    move1 = make_shuffle_mat(T, moves1);
+    move2 = make_shuffle_mat(T, moves2);
+    move3 = make_shuffle_mat(T, moves3);
     move4 = make_shuffle_mat(T, moves4);
 
     R = a(:,:,1);
     G = a(:,:,2);
     B = a(:,:,3);
-
+    shuffledR = unshuffle(R,move1,move4);
+    shuffledG = unshuffle(G,move2,move4);
+    shuffledB = unshuffle(B,move3,move4);
+    out_img = cat(3, shuffledR, shuffledG, shuffledB);
+end
+function shuffledR = unshuffle(R,move1,move4)
     [rows, cols] = size(R);
     p = 1:54:rows;
     q = 1:54:cols;
-    I = shuffleI(rows, move4);
+    I = shuffleI(rows, move4*move1);
     I = p * generatePermutationMatrix(I,p);
-    J = shuffleI(cols, move4);
+    J = shuffleI(cols, move4*move1);
     J = q * generatePermutationMatrix(J,q);
 
     shuffledR = zeros(rows, cols);
-    shuffledG = zeros(rows, cols);
-    shuffledB = zeros(rows, cols);
-    
+    move1 = inv(move1);
     for i = 1:length(I)
         for j = 1:length(J)
             blockR = R(I(i):I(i)+53, J(j):J(j)+53);
-            blockG = G(I(i):I(i)+53, J(j):J(j)+53);
-            blockB = B(I(i):I(i)+53, J(j):J(j)+53);
-            
-            % Apply the inverse move matrix to each block
             shuffledR(p(i):p(i)+53, q(j):q(j)+53) = move1 \ blockR;
-            shuffledG(p(i):p(i)+53, q(j):q(j)+53) = move2 \ blockG;
-            shuffledB(p(i):p(i)+53, q(j):q(j)+53) = move3 \ blockB;
-            
-            % Display progress
             progress = ((i-1)*length(J) + j )*100/(length(I)*length(J));
             disp(progress);
         end
     end
-    
-    out_img = cat(3, shuffledR, shuffledG, shuffledB);
 end
-
 function I_reconstructed = shuffleI(cols,move4)
     I = 1:54:cols;
     remainder = mod(length(I), 54);
@@ -194,4 +210,10 @@ function resized_img = convertintobase54(img)
     new_cols = round(cols / 54) * 54;
     resized_img = imresize(img, [new_rows, new_cols]);
     
+end
+function Entropy = cal_entropy(image)
+    Entropy_R = entropy(image(:,:,1));
+    Entropy_G = entropy(image(:,:,2));
+    Entropy_B = entropy(image(:,:,3));
+    Entropy = [Entropy_R,Entropy_G,Entropy_B];
 end
