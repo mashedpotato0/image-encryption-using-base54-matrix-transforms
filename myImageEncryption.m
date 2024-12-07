@@ -1,27 +1,36 @@
-a = im2double(imread('boom.jpg'));
+a = im2double(imread('vnit.jpg'));
 a = convertintobase54(a);
-moves1 = generate_random_moves();
-moves2 = generate_random_moves();
-moves3 = generate_random_moves();
-moves4 = generate_random_moves();
+pyrunfile("hash.py");
+move = load('matlab_array.txt');
+move = int32(move) + 1;
 
-encrypted_img = imencrypt(a,moves1,moves2,moves3,moves4);
-encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3,moves4);
-%encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3);
-%encrypted_img = imencrypt(permute(encrypted_img, [2 1 3]),moves1,moves2,moves3);
+[rows, cols, channels] = size(a);
+a1 = reshape(a, [rows, cols * channels]);
+
+moves1 = move(1:20);
+moves2 = move(21:40);
+moves3 = move(41:60);
+moves4 = move(61:80);
+encrypted_img = imencrypt(a1,moves1,moves2,moves3,moves4);
+encrypted_img = imencrypt(permute(encrypted_img, [2 1 ]),moves1,moves2,moves3,moves4);
+encrypted_img_show = reshape(encrypted_img, [rows, cols, channels]);
+%encrypted_img = imencrypt(permute(encrypted_img, [2 1 ]),moves1,moves2,moves3);
+%encrypted_img = imencrypt(permute(encrypted_img, [2 1 ]),moves1,moves2,moves3);
 %imshow(encrypted_img);
-imwrite(encrypted_img, 'encrypted_image_2.jpg');
+imwrite(encrypted_img_show, 'encrypted_image_3.jpg');
 decrypted_img = imdecrypt(encrypted_img,moves1,moves2,moves3,moves4);
-decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3,moves4);
-%decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3);
-%decrypted_img = imdecrypt(permute(decrypted_img, [2 1 3]),moves1,moves2,moves3);
+decrypted_img = imdecrypt(permute(decrypted_img, [2 1 ]),moves1,moves2,moves3,moves4);
+
+decrypted_img = reshape(decrypted_img, [rows, cols, channels]);
+%decrypted_img = imdecrypt(permute(decrypted_img, [2 1]),moves1,moves2,moves3);
+%decrypted_img = imdecrypt(permute(decrypted_img, [2 1]),moves1,moves2,moves3);
 % 
-imwrite(decrypted_img,'decrypted_image_1.jpg')
+imwrite(decrypted_img,'decrypted_image_3.jpg')
 subplot(1, 3, 1); 
 imshow(a);
 title('Original Image');
 subplot(1, 3, 2); 
-imshow(encrypted_img);
+imshow(encrypted_img_show);
 title('encrypted Image');
 subplot(1, 3, 3); 
 imshow(decrypted_img);
@@ -72,13 +81,9 @@ function out_img = imencrypt(a, moves1, moves2, moves3, moves4)
     move3 = make_shuffle_mat(T, moves3);
     move4 = make_shuffle_mat(T, moves4);
 
-    R = a(:,:,1);
-    G = a(:,:,2);
-    B = a(:,:,3);
+    R = a(:,:);
     shuffledR = shuffle_channel(R,move1,move4);
-    shuffledG = shuffle_channel(G,move2,move4);
-    shuffledB = shuffle_channel(B,move3,move4);
-    out_img = cat(3, shuffledR, shuffledG, shuffledB);
+    out_img = shuffledR;
 end
 function shuffledR = shuffle_channel(R,move1,move4)
     [rows, cols] = size(R);
@@ -106,13 +111,9 @@ function out_img = imdecrypt(a, moves1, moves2, moves3, moves4)
     move3 = make_shuffle_mat(T, moves3);
     move4 = make_shuffle_mat(T, moves4);
 
-    R = a(:,:,1);
-    G = a(:,:,2);
-    B = a(:,:,3);
+    R = a(:,:);
     shuffledR = unshuffle(R,move1,move4);
-    shuffledG = unshuffle(G,move2,move4);
-    shuffledB = unshuffle(B,move3,move4);
-    out_img = cat(3, shuffledR, shuffledG, shuffledB);
+    out_img = shuffledR;
 end
 function shuffledR = unshuffle(R,move1,move4)
     [rows, cols] = size(R);
